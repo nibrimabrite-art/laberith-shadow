@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runa: Laberinto de Sombras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
+
+        body {
+            background-color: #020617;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 0.5rem;
+            overflow: hidden;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .game-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: #a855f7;
+            letter-spacing: 0.2em;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+            width: 100%;
+            max-width: 550px;
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0.75rem;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 0.4rem;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            font-size: 0.75rem;
+        }
+
+        .battery-track {
+            width: 60px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #battery-fill {
+            height: 100%;
+            width: 100%;
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: width 0.1s linear;
+        }
+
+        #game-container {
+            position: relative;
+            background: #020617;
+            border: 2px solid rgba(168, 85, 247, 0.4);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .btn-primary {
+            background: #a855f7;
+            color: white;
+            padding: 0.6rem 2rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #9333ea;
+            transform: scale(1.05);
+        }
+
+        #initials-input {
+            background: transparent;
+            border-bottom: 2px solid #a855f7;
+            color: white;
+            font-size: 1.5rem;
+            width: 80px;
+            text-align: center;
+            outline: none;
+            text-transform: uppercase;
+            margin: 1rem 0;
+        }
+
+        .star-active {
+            animation: pulse-star 1s infinite alternate;
+        }
+
+        @keyframes pulse-star {
+            from { filter: drop-shadow(0 0 2px #facc15); }
+            to { filter: drop-shadow(0 0 10px #facc15); }
+        }
+
+        .hidden { display: none !important; }
+        
+        #bonus-msg {
+            color: #facc15;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-shadow: 0 0 5px rgba(250, 204, 21, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="game-header">
+        <h1 class="game-title">RUNA</h1>
+    </header>
+
+    <div class="status-bar" id="status-bar-container">
+        <div class="flex flex-col items-start gap-1">
+            <div class="flex items-center gap-1.5 text-purple-400">
+                <i data-lucide="map" class="w-3 h-3"></i>
+                <span class="font-bold">NIVEL <span id="level-val">1</span></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-slate-400 text-[10px]">
+                ETAPAS: <span id="stages-val">0</span>
+            </div>
+        </div>
+        
+        <div class="flex flex-col items-center gap-1">
+            <div class="flex items-center gap-1.5 text-yellow-400 mb-1" id="star-status">
+                <i data-lucide="star" class="w-3 h-3"></i>
+                <span class="font-bold text-[10px]" id="stars-count">2</span>
+            </div>
+            <div class="battery-track">
+                <div id="battery-fill"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-end gap-1">
+            <div class="flex items-center gap-1.5 text-yellow-500">
+                <i data-lucide="trophy" class="w-3 h-3"></i>
+                <span class="font-bold">RECORD</span>
+            </div>
+            <div class="text-[10px] text-yellow-200/80 font-mono">
+                <span id="record-name">AAA</span>: <span id="record-val">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="overlay">
+            <div id="normal-menu">
+                <i id="overlay-icon" data-lucide="lamp" class="w-12 h-12 text-purple-500 mb-3 mx-auto"></i>
+                <h2 id="overlay-title" class="text-xl font-bold text-white mb-1">EL LABERINTO</h2>
+                <p id="overlay-desc" class="text-[11px] text-slate-400 mb-2">Usa WASD o Flechas. No dejes que la magia se extinga.</p>
+                <div id="bonus-msg" class="hidden">¡BENDICIÓN DE RUNA! +2 Estrellas</div>
+                <div id="hint-text" class="text-[9px] text-yellow-500/80 uppercase mb-4 mt-2 tracking-wider">Espacio para activar estrella (atraviesa pared)</div>
+                <button class="btn-primary" onclick="startGame()">DESPERTAR</button>
+            </div>
+
+            <div id="record-menu" class="hidden">
+                <i data-lucide="award" class="w-12 h-12 text-yellow-500 mb-3 mx-auto"></i>
+                <h2 class="text-xl font-bold text-white mb-1">¡NUEVO RECORD!</h2>
+                <p class="text-[11px] text-slate-400">Ingresa tus iniciales</p>
+                <input type="text" id="initials-input" maxlength="3" placeholder="---">
+                <button class="btn-primary" onclick="saveRecord()">GUARDAR</button>
+            </div>
+        </div>
+        <canvas id="mazeCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const levelDisplay = document.getElementById('level-val');
+        const stagesDisplay = document.getElementById('stages-val');
+        const starsDisplay = document.getElementById('stars-count');
+        const recordNameDisplay = document.getElementById('record-name');
+        const recordValDisplay = document.getElementById('record-val');
+        
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlayDesc = document.getElementById('overlay-desc');
+        const bonusMsg = document.getElementById('bonus-msg');
+        const normalMenu = document.getElementById('normal-menu');
+        const recordMenu = document.getElementById('record-menu');
+        const initialsInput = document.getElementById('initials-input');
+        
+        const batteryFill = document.getElementById('battery-fill');
+
+        let currentLevel = 1;
+        let stagesPassed = 0;
+        let starCharges = 2; 
+        let isStarActive = false;
+        
+        let cellSize, cols, rows, grid, player, goal, enemy, starItem;
+        let gameRunning = false;
+        let batteryLevel = 100;
+        let flashLightRadius = 150;
+        
+        let enemyTimer = null;
+        let batteryTimer = null;
+
+        let highScore = parseInt(localStorage.getItem('runa_highscore')) || 0;
+        let highName = localStorage.getItem('runa_highname') || "AAA";
+        
+        function updateUI() {
+            recordNameDisplay.innerText = highName;
+            recordValDisplay.innerText = highScore;
+            starsDisplay.innerText = starCharges;
+            levelDisplay.innerText = currentLevel;
+            stagesDisplay.innerText = stagesPassed;
+        }
+
+        class Cell {
+            constructor(i, j) {
+                this.i = i;
+                this.j = j;
+                this.walls = [true, true, true, true]; 
+                this.visited = false;
+            }
+            show() {
+                if (!cellSize || !ctx) return;
+                let x = this.i * cellSize;
+                let y = this.j * cellSize;
+                ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                if (this.walls[0]) { ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); }
+                if (this.walls[1]) { ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); }
+                if (this.walls[2]) { ctx.moveTo(x + cellSize, y + cellSize); ctx.lineTo(x, y + cellSize); }
+                if (this.walls[3]) { ctx.moveTo(x, y + cellSize); ctx.lineTo(x, y); }
+                ctx.stroke();
+            }
+        }
+
+        function index(i, j) {
+            if (i < 0 || j < 0 || i > cols - 1 || j > rows - 1) return -1;
+            return i + j * cols;
+        }
+
+        function generateMaze() {
+            grid = [];
+            for (let j = 0; j < rows; j++) {
+                for (let i = 0; i < cols; i++) {
+                    grid.push(new Cell(i, j));
+                }
+            }
+            let stack = [];
+            let current = grid[0];
+            current.visited = true;
+            
+            let finished = false;
+            while(!finished) {
+                let next = getUnvisitedNeighbor(current);
+                if (next) {
+                    next.visited = true;
+                    stack.push(current);
+                    removeWalls(current, next);
+                    current = next;
+                } else if (stack.length > 0) {
+                    current = stack.pop();
+                } else {
+                    finished = true;
+                }
+            }
+        }
+
+        function getUnvisitedNeighbor(cell) {
+            let neighbors = [];
+            let top = grid[index(cell.i, cell.j - 1)];
+            let right = grid[index(cell.i + 1, cell.j)];
+            let bottom = grid[index(cell.i, cell.j + 1)];
+            let left = grid[index(cell.i - 1, cell.j)];
+
+            if (top && !top.visited) neighbors.push(top);
+            if (right && !right.visited) neighbors.push(right);
+            if (bottom && !bottom.visited) neighbors.push(bottom);
+            if (left && !left.visited) neighbors.push(left);
+
+            return neighbors.length > 0 ? neighbors[Math.floor(Math.random() * neighbors.length)] : undefined;
+        }
+
+        function removeWalls(a, b) {
+            let x = a.i - b.i;
+            if (x === 1) { a.walls[3] = false; b.walls[1] = false; }
+            else if (x === -1) { a.walls[1] = false; b.walls[3] = false; }
+            let y = a.j - b.j;
+            if (y === 1) { a.walls[0] = false; b.walls[2] = false; }
+            else if (y === -1) { a.walls[2] = false; b.walls[0] = false; }
+        }
+
+        function setupLevel() {
+            stopTimers();
+            isStarActive = false;
+            
+            if (currentLevel <= 1) {
+                cellSize = 45;
+                canvas.width = 450;
+                canvas.height = 360;
+                flashLightRadius = 165;
+            } else if (currentLevel === 2) {
+                cellSize = 32;
+                canvas.width = 512;
+                canvas.height = 384;
+                flashLightRadius = 130;
+            } else {
+                cellSize = 24;
+                canvas.width = 504;
+                canvas.height = 384;
+                flashLightRadius = 110;
+            }
+
+            cols = Math.floor(canvas.width / cellSize);
+            rows = Math.floor(canvas.height / cellSize);
+            generateMaze();
+
+            player = { i: 0, j: 0 };
+            goal = { i: cols - 1, j: rows - 1 };
+            enemy = { i: cols - 1, j: 0 };
+            
+            if (currentLevel > 1 && currentLevel % 2 === 0) {
+                starItem = {
+                    i: Math.floor(Math.random() * (cols - 2)) + 1,
+                    j: Math.floor(Math.random() * (rows - 2)) + 1,
+                    active: true
+                };
+            } else {
+                starItem = null;
+            }
+
+            batteryLevel = 100;
+            batteryFill.style.width = "100%";
+            updateUI();
+            draw();
+        }
+
+        function stopTimers() {
+            if (enemyTimer) clearInterval(enemyTimer);
+            if (batteryTimer) clearInterval(batteryTimer);
+            enemyTimer = null;
+            batteryTimer = null;
+        }
+
+        function draw() {
+            if (!ctx || !grid || !player || !cellSize) return;
+            
+            ctx.fillStyle = "#020617";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            grid.forEach(cell => cell.show());
+
+            const px = player.i * cellSize + cellSize / 2;
+            const py = player.j * cellSize + cellSize / 2;
+
+            ctx.fillStyle = "#fbbf24";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#fbbf24";
+            ctx.beginPath();
+            ctx.arc(goal.i * cellSize + cellSize/2, goal.j * cellSize + cellSize/2, cellSize/4, 0, Math.PI*2);
+            ctx.fill();
+
+            if (starItem && starItem.active) {
+                ctx.fillStyle = "#facc15";
+                ctx.shadowColor = "#facc15";
+                ctx.beginPath();
+                const sx = starItem.i * cellSize + cellSize/2;
+                const sy = starItem.j * cellSize + cellSize/2;
+                for(let i=0; i<5; i++) {
+                    ctx.lineTo(sx + Math.cos((18+i*72)/180*Math.PI)*cellSize/3, sy - Math.sin((18+i*72)/180*Math.PI)*cellSize/3);
+                    ctx.lineTo(sx + Math.cos((54+i*72)/180*Math.PI)*cellSize/6, sy - Math.sin((54+i*72)/180*Math.PI)*cellSize/6);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.fillStyle = "#ef4444";
+            ctx.shadowColor = "#ef4444";
+            ctx.beginPath();
+            ctx.arc(enemy.i * cellSize + cellSize/2, enemy.j * cellSize + cellSize/2, cellSize/4, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillStyle = isStarActive ? "#facc15" : "#c084fc";
+            ctx.shadowColor = isStarActive ? "#facc15" : "#c084fc";
+            ctx.shadowBlur = isStarActive ? 15 : 0;
+            ctx.fillRect(player.i * cellSize + cellSize * 0.25, player.j * cellSize + cellSize * 0.25, cellSize * 0.5, cellSize * 0.5);
+            ctx.shadowBlur = 0;
+
+            if (gameRunning) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-in';
+                
+                let radius = flashLightRadius;
+                if (batteryLevel < 15 && Math.random() > 0.85) radius *= 0.5;
+
+                let grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+                grad.addColorStop(0, 'rgba(0,0,0,1)');
+                grad.addColorStop(0.5, 'rgba(0,0,0,0.85)');
+                grad.addColorStop(1, 'rgba(0,0,0,0)');
+                
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+
+        function movePlayer(di, dj) {
+            if (!gameRunning || !player || !grid) return;
+            let current = grid[index(player.i, player.j)];
+            if (!current) return;
+
+            let canMove = false;
+            if (isStarActive) {
+                const targetI = player.i + di;
+                const targetJ = player.j + dj;
+                if (targetI >= 0 && targetI < cols && targetJ >= 0 && targetJ < rows) {
+                    canMove = true;
+                    isStarActive = false;
+                    updateUI();
+                }
+            } else {
+                if (di === 1 && !current.walls[1]) canMove = true;
+                if (di === -1 && !current.walls[3]) canMove = true;
+                if (dj === 1 && !current.walls[2]) canMove = true;
+                if (dj === -1 && !current.walls[0]) canMove = true;
+            }
+
+            if (canMove) {
+                player.i += di;
+                player.j += dj;
+                checkCollision();
+                if (gameRunning) draw();
+            }
+        }
+
+        function moveEnemy() {
+            if (!gameRunning || !enemy || !player || !grid) return;
+            let current = grid[index(enemy.i, enemy.j)];
+            if (!current) return;
+
+            let moves = [];
+            if (!current.walls[0]) moves.push({i: 0, j: -1});
+            if (!current.walls[1]) moves.push({i: 1, j: 0});
+            if (!current.walls[2]) moves.push({i: 0, j: 1});
+            if (!current.walls[3]) moves.push({i: -1, j: 0});
+            
+            if (moves.length > 0) {
+                let dist = Math.abs(enemy.i - player.i) + Math.abs(enemy.j - player.j);
+                let move;
+                
+                if (dist < 3 && Math.random() > 0.45) {
+                    move = moves[Math.floor(Math.random() * moves.length)];
+                } else {
+                    moves.sort((a, b) => {
+                        let distA = Math.abs((enemy.i + a.i) - player.i) + Math.abs((enemy.j + a.j) - player.j);
+                        let distB = Math.abs((enemy.i + b.i) - player.i) + Math.abs((enemy.j + b.j) - player.j);
+                        return distA - distB;
+                    });
+                    move = moves[0];
+                }
+
+                enemy.i += move.i;
+                enemy.j += move.j;
+                checkCollision();
+                if (gameRunning) draw();
+            }
+        }
+
+        function checkCollision() {
+            if (!player || !enemy || !gameRunning) return;
+            
+            if (starItem && starItem.active && player.i === starItem.i && player.j === starItem.j) {
+                starItem.active = false;
+                starCharges++;
+                updateUI();
+            }
+
+            if (player.i === enemy.i && player.j === enemy.j) {
+                handleGameOver("PERDIDO", "La oscuridad te ha consumido.");
+                return;
+            }
+
+            if (player.i === goal.i && player.j === goal.j) {
+                stagesPassed++;
+                
+                // Bonificación multiplo de 10
+                let gotBonus = false;
+                if (stagesPassed % 10 === 0) {
+                    starCharges += 2;
+                    gotBonus = true;
+                }
+                
+                currentLevel++;
+                gameRunning = false;
+                stopTimers();
+                
+                overlayTitle.innerText = "ASCENSO";
+                overlayDesc.innerText = `Etapa ${stagesPassed} superada. Profundizando...`;
+                
+                if (gotBonus) {
+                    bonusMsg.classList.remove('hidden');
+                } else {
+                    bonusMsg.classList.add('hidden');
+                }
+
+                normalMenu.classList.remove('hidden');
+                recordMenu.classList.add('hidden');
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        function handleGameOver(title, desc) {
+            gameRunning = false;
+            stopTimers();
+            draw();
+            bonusMsg.classList.add('hidden');
+
+            if (stagesPassed > highScore) {
+                normalMenu.classList.add('hidden');
+                recordMenu.classList.remove('hidden');
+                initialsInput.value = "";
+                overlay.classList.remove('hidden');
+                setTimeout(() => initialsInput.focus(), 100);
+            } else {
+                overlayTitle.innerText = title;
+                overlayDesc.innerText = `${desc} Puntuación final: ${stagesPassed}`;
+                normalMenu.classList.remove('hidden');
+                recordMenu.classList.add('hidden');
+                overlay.classList.remove('hidden');
+                resetGameVars();
+            }
+        }
+
+        function resetGameVars() {
+            stagesPassed = 0;
+            currentLevel = 1;
+            starCharges = 2; 
+            isStarActive = false;
+            updateUI();
+        }
+
+        function saveRecord() {
+            const name = initialsInput.value.toUpperCase() || "???";
+            highScore = stagesPassed;
+            highName = name;
+            localStorage.setItem('runa_highscore', highScore);
+            localStorage.setItem('runa_highname', highName);
+            
+            resetGameVars();
+            
+            recordMenu.classList.add('hidden');
+            normalMenu.classList.remove('hidden');
+            overlayTitle.innerText = "GLORIA";
+            overlayDesc.innerText = `Record guardado como ${name}. ¿Listo para volver?`;
+        }
+
+        function startGame() {
+            overlay.classList.add('hidden');
+            bonusMsg.classList.add('hidden');
+            setupLevel();
+            gameRunning = true;
+            
+            const baseSpeed = currentLevel === 1 ? 950 : currentLevel === 2 ? 650 : 450;
+            const enemySpeed = Math.max(300, baseSpeed - (stagesPassed * 10));
+            
+            enemyTimer = setInterval(() => {
+                if (gameRunning) moveEnemy();
+            }, enemySpeed);
+
+            batteryTimer = setInterval(() => {
+                if (gameRunning) {
+                    batteryLevel -= (0.15 + (stagesPassed * 0.02));
+                    batteryFill.style.width = Math.max(0, batteryLevel) + "%";
+                    if (batteryLevel <= 0) {
+                        batteryLevel = 0;
+                        handleGameOver("EXTINCIÓN", "Tu luz se apagó.");
+                    }
+                    draw();
+                }
+            }, 100);
+        }
+
+        function activateStar() {
+            if (starCharges > 0 && !isStarActive) {
+                starCharges--;
+                isStarActive = true;
+                updateUI();
+                draw();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                activateStar();
+                return;
+            }
+            const keys = {
+                'ArrowUp': [0, -1], 'w': [0, -1], 'W': [0, -1],
+                'ArrowDown': [0, 1], 's': [0, 1], 'S': [0, 1],
+                'ArrowLeft': [-1, 0], 'a': [-1, 0], 'A': [-1, 0],
+                'ArrowRight': [1, 0], 'd': [1, 0], 'D': [1, 0]
+            };
+            if (keys[e.key]) {
+                e.preventDefault();
+                movePlayer(...keys[e.key]);
+            }
+        });
+
+        window.onload = () => {
+            if(window.lucide) lucide.createIcons();
+            updateUI();
+            setupLevel();
+        };
+    </script>
+</body>
+</html>
