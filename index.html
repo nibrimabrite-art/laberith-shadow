@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Runa: Laberinto de Sombras</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,10 +17,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             padding: 0.5rem;
             overflow: hidden;
+            touch-action: none; /* Evita zoom y scroll accidental */
         }
 
         .game-header {
@@ -42,17 +43,18 @@
             grid-template-columns: 1fr 1fr 1fr;
             align-items: center;
             width: 100%;
-            max-width: 550px;
+            max-width: 500px;
             margin-bottom: 0.5rem;
-            padding: 0.3rem 0.75rem;
+            padding: 0.3rem 0.5rem;
             background: rgba(15, 23, 42, 0.8);
             border-radius: 0.4rem;
             border: 1px solid rgba(168, 85, 247, 0.2);
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
 
         .battery-track {
-            width: 60px;
+            width: 100%;
+            max-width: 60px;
             height: 6px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 3px;
@@ -74,10 +76,16 @@
             border: 2px solid rgba(168, 85, 247, 0.4);
             border-radius: 0.5rem;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         canvas {
             display: block;
+            max-width: 100%;
+            max-height: 70vh; /* Limita altura para dejar espacio a controles */
+            object-fit: contain;
         }
 
         #overlay {
@@ -107,9 +115,36 @@
             transition: all 0.2s;
         }
 
-        .btn-primary:hover {
-            background: #9333ea;
-            transform: scale(1.05);
+        /* Controles móviles */
+        #mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 1rem;
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .control-btn {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .control-btn:active {
+            background: rgba(168, 85, 247, 0.5);
+        }
+
+        @media (max-pointer: coarse) {
+            #mobile-controls { display: grid; }
+            #hint-text { display: none; }
+            .game-title { font-size: 1rem; }
         }
 
         #initials-input {
@@ -122,15 +157,6 @@
             outline: none;
             text-transform: uppercase;
             margin: 1rem 0;
-        }
-
-        .star-active {
-            animation: pulse-star 1s infinite alternate;
-        }
-
-        @keyframes pulse-star {
-            from { filter: drop-shadow(0 0 2px #facc15); }
-            to { filter: drop-shadow(0 0 10px #facc15); }
         }
 
         .hidden { display: none !important; }
@@ -152,17 +178,15 @@
 
     <div class="status-bar" id="status-bar-container">
         <div class="flex flex-col items-start gap-1">
-            <div class="flex items-center gap-1.5 text-purple-400">
+            <div class="flex items-center gap-1 text-purple-400">
                 <i data-lucide="map" class="w-3 h-3"></i>
                 <span class="font-bold">NIVEL <span id="level-val">1</span></span>
             </div>
-            <div class="flex items-center gap-1.5 text-slate-400 text-[10px]">
-                ETAPAS: <span id="stages-val">0</span>
-            </div>
+            <div class="text-slate-400 text-[9px]">ETAPAS: <span id="stages-val">0</span></div>
         </div>
         
         <div class="flex flex-col items-center gap-1">
-            <div class="flex items-center gap-1.5 text-yellow-400 mb-1" id="star-status">
+            <div class="flex items-center gap-1 text-yellow-400" id="star-status">
                 <i data-lucide="star" class="w-3 h-3"></i>
                 <span class="font-bold text-[10px]" id="stars-count">2</span>
             </div>
@@ -172,11 +196,11 @@
         </div>
 
         <div class="flex flex-col items-end gap-1">
-            <div class="flex items-center gap-1.5 text-yellow-500">
+            <div class="flex items-center gap-1 text-yellow-500">
                 <i data-lucide="trophy" class="w-3 h-3"></i>
                 <span class="font-bold">RECORD</span>
             </div>
-            <div class="text-[10px] text-yellow-200/80 font-mono">
+            <div class="text-[9px] text-yellow-200/80 font-mono">
                 <span id="record-name">AAA</span>: <span id="record-val">0</span>
             </div>
         </div>
@@ -185,23 +209,35 @@
     <div id="game-container">
         <div id="overlay">
             <div id="normal-menu">
-                <i id="overlay-icon" data-lucide="lamp" class="w-12 h-12 text-purple-500 mb-3 mx-auto"></i>
-                <h2 id="overlay-title" class="text-xl font-bold text-white mb-1">EL LABERINTO</h2>
-                <p id="overlay-desc" class="text-[11px] text-slate-400 mb-2">Usa WASD o Flechas. No dejes que la magia se extinga.</p>
-                <div id="bonus-msg" class="hidden">¡BENDICIÓN DE RUNA! +2 Estrellas</div>
-                <div id="hint-text" class="text-[9px] text-yellow-500/80 uppercase mb-4 mt-2 tracking-wider">Espacio para activar estrella (atraviesa pared)</div>
+                <i id="overlay-icon" data-lucide="lamp" class="w-10 h-10 text-purple-500 mb-2 mx-auto"></i>
+                <h2 id="overlay-title" class="text-lg font-bold text-white mb-1">EL LABERINTO</h2>
+                <p id="overlay-desc" class="text-[10px] text-slate-400 mb-2">No dejes que la magia se extinga.</p>
+                <div id="bonus-msg" class="hidden">¡BENDICIÓN! +2 Estrellas</div>
+                <div id="hint-text" class="text-[9px] text-yellow-500/80 uppercase mb-4 mt-2 tracking-wider">Espacio para usar estrella</div>
                 <button class="btn-primary" onclick="startGame()">DESPERTAR</button>
             </div>
 
             <div id="record-menu" class="hidden">
-                <i data-lucide="award" class="w-12 h-12 text-yellow-500 mb-3 mx-auto"></i>
-                <h2 class="text-xl font-bold text-white mb-1">¡NUEVO RECORD!</h2>
-                <p class="text-[11px] text-slate-400">Ingresa tus iniciales</p>
+                <i data-lucide="award" class="w-10 h-10 text-yellow-500 mb-2 mx-auto"></i>
+                <h2 class="text-lg font-bold text-white mb-1">¡NUEVO RECORD!</h2>
                 <input type="text" id="initials-input" maxlength="3" placeholder="---">
                 <button class="btn-primary" onclick="saveRecord()">GUARDAR</button>
             </div>
         </div>
         <canvas id="mazeCanvas"></canvas>
+    </div>
+
+    <!-- Controles para móvil -->
+    <div id="mobile-controls">
+        <div></div>
+        <button class="control-btn" onpointerdown="handleTouchMove(0, -1)"><i data-lucide="chevron-up"></i></button>
+        <div></div>
+        <button class="control-btn" onpointerdown="handleTouchMove(-1, 0)"><i data-lucide="chevron-left"></i></button>
+        <button class="control-btn bg-yellow-500/20" onpointerdown="activateStar()"><i data-lucide="star"></i></button>
+        <button class="control-btn" onpointerdown="handleTouchMove(1, 0)"><i data-lucide="chevron-right"></i></button>
+        <div></div>
+        <button class="control-btn" onpointerdown="handleTouchMove(0, 1)"><i data-lucide="chevron-down"></i></button>
+        <div></div>
     </div>
 
     <script>
@@ -212,7 +248,6 @@
         const starsDisplay = document.getElementById('stars-count');
         const recordNameDisplay = document.getElementById('record-name');
         const recordValDisplay = document.getElementById('record-val');
-        
         const overlay = document.getElementById('overlay');
         const overlayTitle = document.getElementById('overlay-title');
         const overlayDesc = document.getElementById('overlay-desc');
@@ -220,7 +255,6 @@
         const normalMenu = document.getElementById('normal-menu');
         const recordMenu = document.getElementById('record-menu');
         const initialsInput = document.getElementById('initials-input');
-        
         const batteryFill = document.getElementById('battery-fill');
 
         let currentLevel = 1;
@@ -259,7 +293,7 @@
                 let x = this.i * cellSize;
                 let y = this.j * cellSize;
                 ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
                 if (this.walls[0]) { ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); }
                 if (this.walls[1]) { ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); }
@@ -329,25 +363,28 @@
             stopTimers();
             isStarActive = false;
             
+            const screenW = window.innerWidth - 40;
+            const screenH = window.innerHeight * 0.6; // Dejar espacio para UI y controles
+            
             if (currentLevel <= 1) {
-                cellSize = 45;
-                canvas.width = 450;
-                canvas.height = 360;
-                flashLightRadius = 165;
+                cols = 10;
+                rows = 8;
             } else if (currentLevel === 2) {
-                cellSize = 32;
-                canvas.width = 512;
-                canvas.height = 384;
-                flashLightRadius = 130;
+                cols = 16;
+                rows = 12;
             } else {
-                cellSize = 24;
-                canvas.width = 504;
-                canvas.height = 384;
-                flashLightRadius = 110;
+                cols = 20;
+                rows = 15;
             }
 
-            cols = Math.floor(canvas.width / cellSize);
-            rows = Math.floor(canvas.height / cellSize);
+            // Calcular cellSize para que quepa en pantalla
+            cellSize = Math.min(screenW / cols, screenH / rows);
+            canvas.width = cols * cellSize;
+            canvas.height = rows * cellSize;
+
+            // Ajustar radio de luz según el nuevo tamaño de celda
+            flashLightRadius = cellSize * 3.5;
+
             generateMaze();
 
             player = { i: 0, j: 0 };
@@ -517,8 +554,6 @@
 
             if (player.i === goal.i && player.j === goal.j) {
                 stagesPassed++;
-                
-                // Bonificación multiplo de 10
                 let gotBonus = false;
                 if (stagesPassed % 10 === 0) {
                     starCharges += 2;
@@ -530,13 +565,10 @@
                 stopTimers();
                 
                 overlayTitle.innerText = "ASCENSO";
-                overlayDesc.innerText = `Etapa ${stagesPassed} superada. Profundizando...`;
+                overlayDesc.innerText = `Etapa ${stagesPassed} superada.`;
                 
-                if (gotBonus) {
-                    bonusMsg.classList.remove('hidden');
-                } else {
-                    bonusMsg.classList.add('hidden');
-                }
+                if (gotBonus) bonusMsg.classList.remove('hidden');
+                else bonusMsg.classList.add('hidden');
 
                 normalMenu.classList.remove('hidden');
                 recordMenu.classList.add('hidden');
@@ -555,10 +587,9 @@
                 recordMenu.classList.remove('hidden');
                 initialsInput.value = "";
                 overlay.classList.remove('hidden');
-                setTimeout(() => initialsInput.focus(), 100);
             } else {
                 overlayTitle.innerText = title;
-                overlayDesc.innerText = `${desc} Puntuación final: ${stagesPassed}`;
+                overlayDesc.innerText = `${desc} Puntos: ${stagesPassed}`;
                 normalMenu.classList.remove('hidden');
                 recordMenu.classList.add('hidden');
                 overlay.classList.remove('hidden');
@@ -580,13 +611,11 @@
             highName = name;
             localStorage.setItem('runa_highscore', highScore);
             localStorage.setItem('runa_highname', highName);
-            
             resetGameVars();
-            
             recordMenu.classList.add('hidden');
             normalMenu.classList.remove('hidden');
             overlayTitle.innerText = "GLORIA";
-            overlayDesc.innerText = `Record guardado como ${name}. ¿Listo para volver?`;
+            overlayDesc.innerText = `Record guardado como ${name}.`;
         }
 
         function startGame() {
@@ -624,6 +653,10 @@
             }
         }
 
+        function handleTouchMove(di, dj) {
+            if (gameRunning) movePlayer(di, dj);
+        }
+
         window.addEventListener('keydown', (e) => {
             if (!gameRunning) return;
             if (e.code === 'Space') {
@@ -641,6 +674,11 @@
                 e.preventDefault();
                 movePlayer(...keys[e.key]);
             }
+        });
+
+        // Reajustar si cambia la orientación o tamaño
+        window.addEventListener('resize', () => {
+            if (!gameRunning) setupLevel();
         });
 
         window.onload = () => {
