@@ -9,33 +9,39 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap');
 
+        :root {
+            --bg-dark: #020617;
+            --primary-magic: #a855f7;
+            --accent-star: #facc15;
+            --danger-shadow: #ef4444;
+        }
+
         body {
-            background-color: #020617;
+            background-color: var(--bg-dark);
             color: #e2e8f0;
             font-family: 'Inter', sans-serif;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
             min-height: 100vh;
             padding: 0.5rem;
             overflow: hidden;
-            touch-action: none; /* Evita zoom y scroll accidental */
+            touch-action: none;
         }
 
         .game-header {
             text-align: center;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
         }
 
         .game-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.25rem;
-            color: #a855f7;
-            letter-spacing: 0.2em;
+            font-size: 1.5rem;
+            color: var(--primary-magic);
+            letter-spacing: 0.3em;
             margin: 0;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+            text-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
         }
 
         .status-bar {
@@ -44,20 +50,20 @@
             align-items: center;
             width: 100%;
             max-width: 500px;
-            margin-bottom: 0.5rem;
-            padding: 0.3rem 0.5rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-radius: 0.4rem;
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            font-size: 0.7rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            font-size: 0.75rem;
         }
 
         .battery-track {
             width: 100%;
-            max-width: 60px;
-            height: 6px;
+            max-width: 70px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 3px;
+            border-radius: 4px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -66,107 +72,123 @@
             height: 100%;
             width: 100%;
             background: #10b981;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            transition: width 0.1s linear;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            transition: width 0.2s linear, background 0.3s;
         }
 
         #game-container {
             position: relative;
-            background: #020617;
+            background: #000;
             border: 2px solid rgba(168, 85, 247, 0.4);
-            border-radius: 0.5rem;
+            border-radius: 1rem;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 450px;
         }
 
         canvas {
             display: block;
             max-width: 100%;
-            max-height: 70vh; /* Limita altura para dejar espacio a controles */
-            object-fit: contain;
+            max-height: 55vh;
+            image-rendering: pixelated;
         }
 
         #overlay {
             position: absolute;
             inset: 0;
-            background: rgba(2, 6, 23, 0.98);
+            background: rgba(2, 6, 23, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
             text-align: center;
-            padding: 1.5rem;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
         }
 
         .btn-primary {
-            background: #a855f7;
+            background: var(--primary-magic);
             color: white;
-            padding: 0.6rem 2rem;
-            border-radius: 0.25rem;
-            font-size: 0.85rem;
+            padding: 0.75rem 2.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
             font-weight: 700;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             border: none;
             cursor: pointer;
             text-transform: uppercase;
-            transition: all 0.2s;
+            letter-spacing: 0.1em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Controles móviles */
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Controles móviles visibles por defecto si es touch */
         #mobile-controls {
-            display: none;
+            display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 1rem;
             width: 100%;
-            max-width: 250px;
+            max-width: 300px;
+            z-index: 10;
         }
 
         .control-btn {
-            background: rgba(168, 85, 247, 0.2);
-            border: 1px solid rgba(168, 85, 247, 0.4);
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             color: white;
-            padding: 15px;
-            border-radius: 12px;
+            height: 60px;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             touch-action: manipulation;
+            user-select: none;
         }
 
         .control-btn:active {
-            background: rgba(168, 85, 247, 0.5);
+            background: var(--primary-magic);
+            transform: scale(0.95);
         }
 
-        @media (max-pointer: coarse) {
-            #mobile-controls { display: grid; }
-            #hint-text { display: none; }
-            .game-title { font-size: 1rem; }
+        .magic-btn {
+            background: rgba(250, 204, 21, 0.1);
+            border-color: rgba(250, 204, 21, 0.4);
+            color: var(--accent-star);
+        }
+
+        .magic-btn:active {
+            background: var(--accent-star);
+            color: black;
         }
 
         #initials-input {
-            background: transparent;
-            border-bottom: 2px solid #a855f7;
+            background: rgba(255,255,255,0.05);
+            border: none;
+            border-bottom: 2px solid var(--primary-magic);
             color: white;
-            font-size: 1.5rem;
-            width: 80px;
+            font-size: 2rem;
+            width: 120px;
             text-align: center;
             outline: none;
             text-transform: uppercase;
-            margin: 1rem 0;
+            margin: 1.5rem 0;
+            font-family: 'Playfair Display', serif;
         }
 
         .hidden { display: none !important; }
-        
-        #bonus-msg {
-            color: #facc15;
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            text-shadow: 0 0 5px rgba(250, 204, 21, 0.5);
+
+        @media (min-width: 768px) {
+            #mobile-controls { display: none; }
         }
     </style>
 </head>
@@ -176,18 +198,18 @@
         <h1 class="game-title">RUNA</h1>
     </header>
 
-    <div class="status-bar" id="status-bar-container">
-        <div class="flex flex-col items-start gap-1">
-            <div class="flex items-center gap-1 text-purple-400">
+    <div class="status-bar">
+        <div class="flex flex-col items-start">
+            <div class="flex items-center gap-1 text-purple-400 font-bold uppercase tracking-tighter">
                 <i data-lucide="map" class="w-3 h-3"></i>
-                <span class="font-bold">NIVEL <span id="level-val">1</span></span>
+                NIVEL <span id="level-val">1</span>
             </div>
-            <div class="text-slate-400 text-[9px]">ETAPAS: <span id="stages-val">0</span></div>
+            <div class="text-[9px] text-slate-500 font-mono">ETAPAS: <span id="stages-val">0</span></div>
         </div>
         
         <div class="flex flex-col items-center gap-1">
             <div class="flex items-center gap-1 text-yellow-400" id="star-status">
-                <i data-lucide="star" class="w-3 h-3"></i>
+                <i data-lucide="sparkles" class="w-3 h-3"></i>
                 <span class="font-bold text-[10px]" id="stars-count">2</span>
             </div>
             <div class="battery-track">
@@ -195,105 +217,119 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-end gap-1">
-            <div class="flex items-center gap-1 text-yellow-500">
-                <i data-lucide="trophy" class="w-3 h-3"></i>
-                <span class="font-bold">RECORD</span>
-            </div>
-            <div class="text-[9px] text-yellow-200/80 font-mono">
-                <span id="record-name">AAA</span>: <span id="record-val">0</span>
+        <div class="flex flex-col items-end">
+            <div class="text-[10px] text-yellow-500 font-bold uppercase">Record</div>
+            <div class="text-[11px] text-yellow-200/90 font-mono">
+                <span id="record-name">---</span>: <span id="record-val">0</span>
             </div>
         </div>
     </div>
 
     <div id="game-container">
         <div id="overlay">
-            <div id="normal-menu">
-                <i id="overlay-icon" data-lucide="lamp" class="w-10 h-10 text-purple-500 mb-2 mx-auto"></i>
-                <h2 id="overlay-title" class="text-lg font-bold text-white mb-1">EL LABERINTO</h2>
-                <p id="overlay-desc" class="text-[10px] text-slate-400 mb-2">No dejes que la magia se extinga.</p>
-                <div id="bonus-msg" class="hidden">¡BENDICIÓN! +2 Estrellas</div>
-                <div id="hint-text" class="text-[9px] text-yellow-500/80 uppercase mb-4 mt-2 tracking-wider">Espacio para usar estrella</div>
-                <button class="btn-primary" onclick="startGame()">DESPERTAR</button>
+            <div id="menu-standard">
+                <i data-lucide="flame" class="w-12 h-12 text-purple-500 mb-4 mx-auto animate-pulse"></i>
+                <h2 id="msg-title" class="text-xl font-bold text-white mb-2">EL LABERINTO</h2>
+                <p id="msg-desc" class="text-xs text-slate-400 max-w-[200px] mx-auto">La oscuridad acecha. Recoge runas para iluminar tu camino.</p>
+                <div id="bonus-alert" class="hidden mt-2 text-yellow-400 font-bold text-sm">¡BENDICIÓN RECIBIDA!</div>
+                <button class="btn-primary" onclick="initGameSession()">COMENZAR</button>
             </div>
 
-            <div id="record-menu" class="hidden">
-                <i data-lucide="award" class="w-10 h-10 text-yellow-500 mb-2 mx-auto"></i>
-                <h2 class="text-lg font-bold text-white mb-1">¡NUEVO RECORD!</h2>
+            <div id="menu-record" class="hidden">
+                <i data-lucide="trophy" class="w-12 h-12 text-yellow-500 mb-4 mx-auto"></i>
+                <h2 class="text-xl font-bold text-white mb-1">LEYENDA</h2>
+                <p class="text-[10px] text-slate-400">Tu nombre quedará grabado en las sombras.</p>
                 <input type="text" id="initials-input" maxlength="3" placeholder="---">
-                <button class="btn-primary" onclick="saveRecord()">GUARDAR</button>
+                <br>
+                <button class="btn-primary" onclick="confirmHighScore()">GRABAR</button>
             </div>
         </div>
         <canvas id="mazeCanvas"></canvas>
     </div>
 
-    <!-- Controles para móvil -->
+    <!-- Controles para móvil siempre visibles si no es escritorio -->
     <div id="mobile-controls">
         <div></div>
-        <button class="control-btn" onpointerdown="handleTouchMove(0, -1)"><i data-lucide="chevron-up"></i></button>
+        <button class="control-btn" onpointerdown="handleTouchMove(0, -1)" aria-label="Arriba">
+            <i data-lucide="chevron-up"></i>
+        </button>
         <div></div>
-        <button class="control-btn" onpointerdown="handleTouchMove(-1, 0)"><i data-lucide="chevron-left"></i></button>
-        <button class="control-btn bg-yellow-500/20" onpointerdown="activateStar()"><i data-lucide="star"></i></button>
-        <button class="control-btn" onpointerdown="handleTouchMove(1, 0)"><i data-lucide="chevron-right"></i></button>
+        
+        <button class="control-btn" onpointerdown="handleTouchMove(-1, 0)" aria-label="Izquierda">
+            <i data-lucide="chevron-left"></i>
+        </button>
+        <button class="control-btn magic-btn" onpointerdown="handleTouchMagic()" aria-label="Magia">
+            <i data-lucide="sparkles"></i>
+        </button>
+        <button class="control-btn" onpointerdown="handleTouchMove(1, 0)" aria-label="Derecha">
+            <i data-lucide="chevron-right"></i>
+        </button>
+        
         <div></div>
-        <button class="control-btn" onpointerdown="handleTouchMove(0, 1)"><i data-lucide="chevron-down"></i></button>
+        <button class="control-btn" onpointerdown="handleTouchMove(0, 1)" aria-label="Abajo">
+            <i data-lucide="chevron-down"></i>
+        </button>
         <div></div>
     </div>
 
     <script>
         const canvas = document.getElementById('mazeCanvas');
         const ctx = canvas.getContext('2d');
-        const levelDisplay = document.getElementById('level-val');
-        const stagesDisplay = document.getElementById('stages-val');
-        const starsDisplay = document.getElementById('stars-count');
-        const recordNameDisplay = document.getElementById('record-name');
-        const recordValDisplay = document.getElementById('record-val');
+        const levelText = document.getElementById('level-val');
+        const stagesText = document.getElementById('stages-val');
+        const starsText = document.getElementById('stars-count');
+        const recordNameText = document.getElementById('record-name');
+        const recordValText = document.getElementById('record-val');
         const overlay = document.getElementById('overlay');
-        const overlayTitle = document.getElementById('overlay-title');
-        const overlayDesc = document.getElementById('overlay-desc');
-        const bonusMsg = document.getElementById('bonus-msg');
-        const normalMenu = document.getElementById('normal-menu');
-        const recordMenu = document.getElementById('record-menu');
-        const initialsInput = document.getElementById('initials-input');
-        const batteryFill = document.getElementById('battery-fill');
+        const batteryBar = document.getElementById('battery-fill');
 
-        let currentLevel = 1;
-        let stagesPassed = 0;
-        let starCharges = 2; 
-        let isStarActive = false;
+        // Game State
+        let level = 1;
+        let stages = 0;
+        let stars = 2;
+        let isMagicActive = false;
+        let gameActive = false;
+        let battery = 100;
         
-        let cellSize, cols, rows, grid, player, goal, enemy, starItem;
-        let gameRunning = false;
-        let batteryLevel = 100;
-        let flashLightRadius = 150;
-        
-        let enemyTimer = null;
-        let batteryTimer = null;
+        let grid = [];
+        let cols, rows, cellSize;
+        let player = {x:0, y:0};
+        let exit = {x:0, y:0};
+        let shadow = {x:0, y:0};
+        let rune = null;
 
-        let highScore = parseInt(localStorage.getItem('runa_highscore')) || 0;
-        let highName = localStorage.getItem('runa_highname') || "AAA";
-        
-        function updateUI() {
-            recordNameDisplay.innerText = highName;
-            recordValDisplay.innerText = highScore;
-            starsDisplay.innerText = starCharges;
-            levelDisplay.innerText = currentLevel;
-            stagesDisplay.innerText = stagesPassed;
+        let shadowPulse = 0;
+        let timers = { shadow: null, battery: null };
+
+        // Persistent Highscore
+        let bestScore = parseInt(localStorage.getItem('runa_best_val')) || 0;
+        let bestName = localStorage.getItem('runa_best_name') || "---";
+
+        function refreshUI() {
+            recordNameText.innerText = bestName;
+            recordValText.innerText = bestScore;
+            starsText.innerText = stars;
+            levelText.innerText = level;
+            stagesText.innerText = stages;
+            
+            if (battery > 50) batteryBar.style.background = "#10b981";
+            else if (battery > 20) batteryBar.style.background = "#f59e0b";
+            else batteryBar.style.background = "#ef4444";
         }
 
         class Cell {
-            constructor(i, j) {
-                this.i = i;
-                this.j = j;
-                this.walls = [true, true, true, true]; 
+            constructor(c, r) {
+                this.c = c;
+                this.r = r;
+                this.walls = [true, true, true, true]; // T, R, B, L
                 this.visited = false;
             }
-            show() {
-                if (!cellSize || !ctx) return;
-                let x = this.i * cellSize;
-                let y = this.j * cellSize;
-                ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
-                ctx.lineWidth = 2;
+
+            draw() {
+                const x = this.c * cellSize;
+                const y = this.r * cellSize;
+                ctx.strokeStyle = "rgba(168, 85, 247, 0.4)";
+                ctx.lineWidth = Math.max(1, cellSize * 0.05);
                 ctx.beginPath();
                 if (this.walls[0]) { ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); }
                 if (this.walls[1]) { ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); }
@@ -303,171 +339,177 @@
             }
         }
 
-        function index(i, j) {
-            if (i < 0 || j < 0 || i > cols - 1 || j > rows - 1) return -1;
-            return i + j * cols;
-        }
-
-        function generateMaze() {
+        function createMaze() {
             grid = [];
-            for (let j = 0; j < rows; j++) {
-                for (let i = 0; i < cols; i++) {
-                    grid.push(new Cell(i, j));
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    grid.push(new Cell(c, r));
                 }
             }
-            let stack = [];
+
+            const stack = [];
             let current = grid[0];
             current.visited = true;
-            
-            let finished = false;
-            while(!finished) {
-                let next = getUnvisitedNeighbor(current);
+
+            while (true) {
+                const next = getNeighbor(current);
                 if (next) {
                     next.visited = true;
                     stack.push(current);
-                    removeWalls(current, next);
+                    removeWallsBetween(current, next);
                     current = next;
                 } else if (stack.length > 0) {
                     current = stack.pop();
                 } else {
-                    finished = true;
+                    break;
                 }
             }
         }
 
-        function getUnvisitedNeighbor(cell) {
-            let neighbors = [];
-            let top = grid[index(cell.i, cell.j - 1)];
-            let right = grid[index(cell.i + 1, cell.j)];
-            let bottom = grid[index(cell.i, cell.j + 1)];
-            let left = grid[index(cell.i - 1, cell.j)];
-
-            if (top && !top.visited) neighbors.push(top);
-            if (right && !right.visited) neighbors.push(right);
-            if (bottom && !bottom.visited) neighbors.push(bottom);
-            if (left && !left.visited) neighbors.push(left);
-
-            return neighbors.length > 0 ? neighbors[Math.floor(Math.random() * neighbors.length)] : undefined;
+        function getIdx(c, r) {
+            if (c < 0 || r < 0 || c >= cols || r >= rows) return -1;
+            return c + r * cols;
         }
 
-        function removeWalls(a, b) {
-            let x = a.i - b.i;
-            if (x === 1) { a.walls[3] = false; b.walls[1] = false; }
-            else if (x === -1) { a.walls[1] = false; b.walls[3] = false; }
-            let y = a.j - b.j;
-            if (y === 1) { a.walls[0] = false; b.walls[2] = false; }
-            else if (y === -1) { a.walls[2] = false; b.walls[0] = false; }
+        function getNeighbor(cell) {
+            const neighbors = [];
+            const coords = [[0,-1],[1,0],[0,1],[-1,0]];
+            coords.forEach(coord => {
+                const n = grid[getIdx(cell.c + coord[0], cell.r + coord[1])];
+                if (n && !n.visited) neighbors.push(n);
+            });
+            return neighbors.length > 0 ? neighbors[Math.floor(Math.random() * neighbors.length)] : null;
         }
 
-        function setupLevel() {
-            stopTimers();
-            isStarActive = false;
-            
-            const screenW = window.innerWidth - 40;
-            const screenH = window.innerHeight * 0.6; // Dejar espacio para UI y controles
-            
-            if (currentLevel <= 1) {
-                cols = 10;
-                rows = 8;
-            } else if (currentLevel === 2) {
-                cols = 16;
-                rows = 12;
-            } else {
-                cols = 20;
-                rows = 15;
-            }
+        function removeWallsBetween(a, b) {
+            const dc = a.c - b.c;
+            if (dc === 1) { a.walls[3] = false; b.walls[1] = false; }
+            else if (dc === -1) { a.walls[1] = false; b.walls[3] = false; }
+            const dr = a.r - b.r;
+            if (dr === 1) { a.walls[0] = false; b.walls[2] = false; }
+            else if (dr === -1) { a.walls[2] = false; b.walls[0] = false; }
+        }
 
-            // Calcular cellSize para que quepa en pantalla
-            cellSize = Math.min(screenW / cols, screenH / rows);
+        function prepareStage() {
+            clearTimers();
+            isMagicActive = false;
+            
+            if (level === 1) { cols = 8; rows = 8; }
+            else if (level === 2) { cols = 12; rows = 10; }
+            else { cols = 16; rows = 12; }
+
+            const margin = 40;
+            const availableW = Math.min(450, window.innerWidth - margin);
+            const availableH = window.innerHeight * 0.5;
+            
+            cellSize = Math.floor(Math.min(availableW / cols, availableH / rows));
+            if (cellSize < 10) cellSize = 10;
+
             canvas.width = cols * cellSize;
             canvas.height = rows * cellSize;
 
-            // Ajustar radio de luz según el nuevo tamaño de celda
-            flashLightRadius = cellSize * 3.5;
+            createMaze();
 
-            generateMaze();
-
-            player = { i: 0, j: 0 };
-            goal = { i: cols - 1, j: rows - 1 };
-            enemy = { i: cols - 1, j: 0 };
+            player = { x: 0, y: 0 };
+            exit = { x: cols - 1, y: rows - 1 };
+            shadow = { x: cols - 1, y: 0 };
             
-            if (currentLevel > 1 && currentLevel % 2 === 0) {
-                starItem = {
-                    i: Math.floor(Math.random() * (cols - 2)) + 1,
-                    j: Math.floor(Math.random() * (rows - 2)) + 1,
-                    active: true
+            if (level > 1 && level % 2 === 0) {
+                rune = { 
+                    x: Math.floor(Math.random() * (cols-2)) + 1, 
+                    y: Math.floor(Math.random() * (rows-2)) + 1,
+                    collected: false 
                 };
             } else {
-                starItem = null;
+                rune = null;
             }
 
-            batteryLevel = 100;
-            batteryFill.style.width = "100%";
-            updateUI();
-            draw();
+            battery = 100;
+            refreshUI();
+            render();
         }
 
-        function stopTimers() {
-            if (enemyTimer) clearInterval(enemyTimer);
-            if (batteryTimer) clearInterval(batteryTimer);
-            enemyTimer = null;
-            batteryTimer = null;
+        function clearTimers() {
+            clearInterval(timers.shadow);
+            clearInterval(timers.battery);
         }
 
-        function draw() {
-            if (!ctx || !grid || !player || !cellSize) return;
+        function render() {
+            if (!ctx || isNaN(cellSize) || cellSize <= 0) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = "#020617";
+            ctx.fillStyle = "#000";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            grid.forEach(cell => cell.show());
+            grid.forEach(c => c.draw());
 
-            const px = player.i * cellSize + cellSize / 2;
-            const py = player.j * cellSize + cellSize / 2;
-
+            // Salida
+            const ex = exit.x * cellSize + cellSize/2;
+            const ey = exit.y * cellSize + cellSize/2;
+            const exitRad = Math.max(2, cellSize/4);
             ctx.fillStyle = "#fbbf24";
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = "#fbbf24";
             ctx.beginPath();
-            ctx.arc(goal.i * cellSize + cellSize/2, goal.j * cellSize + cellSize/2, cellSize/4, 0, Math.PI*2);
+            ctx.arc(ex, ey, exitRad, 0, Math.PI*2);
             ctx.fill();
 
-            if (starItem && starItem.active) {
+            // Runa
+            if (rune && !rune.collected) {
                 ctx.fillStyle = "#facc15";
                 ctx.shadowColor = "#facc15";
                 ctx.beginPath();
-                const sx = starItem.i * cellSize + cellSize/2;
-                const sy = starItem.j * cellSize + cellSize/2;
-                for(let i=0; i<5; i++) {
-                    ctx.lineTo(sx + Math.cos((18+i*72)/180*Math.PI)*cellSize/3, sy - Math.sin((18+i*72)/180*Math.PI)*cellSize/3);
-                    ctx.lineTo(sx + Math.cos((54+i*72)/180*Math.PI)*cellSize/6, sy - Math.sin((54+i*72)/180*Math.PI)*cellSize/6);
-                }
+                const rx = rune.x * cellSize + cellSize/2;
+                const ry = rune.y * cellSize + cellSize/2;
+                const runeSize = Math.max(3, cellSize/3);
+                ctx.moveTo(rx, ry - runeSize);
+                ctx.lineTo(rx + runeSize/1.5, ry);
+                ctx.lineTo(rx, ry + runeSize);
+                ctx.lineTo(rx - runeSize/1.5, ry);
                 ctx.closePath();
                 ctx.fill();
             }
 
+            // Sombra
+            const sx = shadow.x * cellSize + cellSize/2;
+            const sy = shadow.y * cellSize + cellSize/2;
+            const shadowBaseRad = Math.max(2, cellSize/3.5);
             ctx.fillStyle = "#ef4444";
             ctx.shadowColor = "#ef4444";
+            ctx.shadowBlur = 10 + Math.sin(shadowPulse) * 5;
             ctx.beginPath();
-            ctx.arc(enemy.i * cellSize + cellSize/2, enemy.j * cellSize + cellSize/2, cellSize/4, 0, Math.PI*2);
+            ctx.arc(sx, sy, shadowBaseRad, 0, Math.PI*2);
             ctx.fill();
+            shadowPulse += 0.2;
 
-            ctx.fillStyle = isStarActive ? "#facc15" : "#c084fc";
-            ctx.shadowColor = isStarActive ? "#facc15" : "#c084fc";
-            ctx.shadowBlur = isStarActive ? 15 : 0;
-            ctx.fillRect(player.i * cellSize + cellSize * 0.25, player.j * cellSize + cellSize * 0.25, cellSize * 0.5, cellSize * 0.5);
+            // Jugador
+            ctx.shadowBlur = isMagicActive ? 25 : 0;
+            ctx.shadowColor = isMagicActive ? "#facc15" : "transparent";
+            ctx.fillStyle = isMagicActive ? "#facc15" : "#c084fc";
+            const pSize = Math.max(4, cellSize * 0.6);
+            const pOffset = (cellSize - pSize) / 2;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(player.x * cellSize + pOffset, player.y * cellSize + pOffset, pSize, pSize, 4);
+            } else {
+                ctx.rect(player.x * cellSize + pOffset, player.y * cellSize + pOffset, pSize, pSize);
+            }
+            ctx.fill();
             ctx.shadowBlur = 0;
 
-            if (gameRunning) {
+            // Linterna
+            if (gameActive) {
                 ctx.save();
                 ctx.globalCompositeOperation = 'destination-in';
+                const px = player.x * cellSize + cellSize/2;
+                const py = player.y * cellSize + cellSize/2;
                 
-                let radius = flashLightRadius;
-                if (batteryLevel < 15 && Math.random() > 0.85) radius *= 0.5;
+                let radius = Math.max(20, cellSize * 3.5);
+                if (battery < 20 && Math.random() > 0.8) radius *= 0.6;
 
-                let grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
+                const grad = ctx.createRadialGradient(px, py, 0, px, py, radius);
                 grad.addColorStop(0, 'rgba(0,0,0,1)');
-                grad.addColorStop(0.5, 'rgba(0,0,0,0.85)');
+                grad.addColorStop(0.7, 'rgba(0,0,0,0.3)');
                 grad.addColorStop(1, 'rgba(0,0,0,0)');
                 
                 ctx.fillStyle = grad;
@@ -476,216 +518,194 @@
             }
         }
 
-        function movePlayer(di, dj) {
-            if (!gameRunning || !player || !grid) return;
-            let current = grid[index(player.i, player.j)];
+        function triggerMove(dc, dr) {
+            if (!gameActive) return;
+            const current = grid[getIdx(player.x, player.y)];
             if (!current) return;
+            
+            let possible = false;
 
-            let canMove = false;
-            if (isStarActive) {
-                const targetI = player.i + di;
-                const targetJ = player.j + dj;
-                if (targetI >= 0 && targetI < cols && targetJ >= 0 && targetJ < rows) {
-                    canMove = true;
-                    isStarActive = false;
-                    updateUI();
+            if (isMagicActive) {
+                const targetX = player.x + dc;
+                const targetY = player.y + dr;
+                if (targetX >= 0 && targetX < cols && targetY >= 0 && targetY < rows) {
+                    possible = true;
+                    isMagicActive = false;
                 }
             } else {
-                if (di === 1 && !current.walls[1]) canMove = true;
-                if (di === -1 && !current.walls[3]) canMove = true;
-                if (dj === 1 && !current.walls[2]) canMove = true;
-                if (dj === -1 && !current.walls[0]) canMove = true;
+                if (dc === 1 && !current.walls[1]) possible = true;
+                if (dc === -1 && !current.walls[3]) possible = true;
+                if (dr === 1 && !current.walls[2]) possible = true;
+                if (dr === -1 && !current.walls[0]) possible = true;
             }
 
-            if (canMove) {
-                player.i += di;
-                player.j += dj;
-                checkCollision();
-                if (gameRunning) draw();
+            if (possible) {
+                player.x += dc;
+                player.y += dr;
+                checkEvents();
+                render();
             }
         }
 
-        function moveEnemy() {
-            if (!gameRunning || !enemy || !player || !grid) return;
-            let current = grid[index(enemy.i, enemy.j)];
+        // Wrappers para Touch
+        function handleTouchMove(dc, dr) {
+            triggerMove(dc, dr);
+        }
+
+        function handleTouchMagic() {
+            useMagicStar();
+        }
+
+        function moveShadow() {
+            if (!gameActive) return;
+            const current = grid[getIdx(shadow.x, shadow.y)];
             if (!current) return;
-
-            let moves = [];
-            if (!current.walls[0]) moves.push({i: 0, j: -1});
-            if (!current.walls[1]) moves.push({i: 1, j: 0});
-            if (!current.walls[2]) moves.push({i: 0, j: 1});
-            if (!current.walls[3]) moves.push({i: -1, j: 0});
             
-            if (moves.length > 0) {
-                let dist = Math.abs(enemy.i - player.i) + Math.abs(enemy.j - player.j);
-                let move;
-                
-                if (dist < 3 && Math.random() > 0.45) {
-                    move = moves[Math.floor(Math.random() * moves.length)];
-                } else {
-                    moves.sort((a, b) => {
-                        let distA = Math.abs((enemy.i + a.i) - player.i) + Math.abs((enemy.j + a.j) - player.j);
-                        let distB = Math.abs((enemy.i + b.i) - player.i) + Math.abs((enemy.j + b.j) - player.j);
-                        return distA - distB;
-                    });
-                    move = moves[0];
-                }
+            const options = [];
+            if (!current.walls[0]) options.push({x:0, y:-1});
+            if (!current.walls[1]) options.push({x:1, y:0});
+            if (!current.walls[2]) options.push({x:0, y:1});
+            if (!current.walls[3]) options.push({x:-1, y:0});
 
-                enemy.i += move.i;
-                enemy.j += move.j;
-                checkCollision();
-                if (gameRunning) draw();
+            if (options.length > 0) {
+                options.sort((a, b) => {
+                    const distA = Math.hypot((shadow.x + a.x) - player.x, (shadow.y + a.y) - player.y);
+                    const distB = Math.hypot((shadow.x + b.x) - player.x, (shadow.y + b.y) - player.y);
+                    return distA - distB;
+                });
+                
+                const move = Math.random() < 0.25 ? options[Math.floor(Math.random()*options.length)] : options[0];
+                shadow.x += move.x;
+                shadow.y += move.y;
+                checkEvents();
+                render();
             }
         }
 
-        function checkCollision() {
-            if (!player || !enemy || !gameRunning) return;
-            
-            if (starItem && starItem.active && player.i === starItem.i && player.j === starItem.j) {
-                starItem.active = false;
-                starCharges++;
-                updateUI();
+        function checkEvents() {
+            if (rune && !rune.collected && player.x === rune.x && player.y === rune.y) {
+                rune.collected = true;
+                stars++;
+                refreshUI();
             }
-
-            if (player.i === enemy.i && player.j === enemy.j) {
-                handleGameOver("PERDIDO", "La oscuridad te ha consumido.");
-                return;
+            if (player.x === shadow.x && player.y === shadow.y) {
+                endGame("DERROTA", "La sombra te ha reclamado.");
             }
-
-            if (player.i === goal.i && player.j === goal.j) {
-                stagesPassed++;
-                let gotBonus = false;
-                if (stagesPassed % 10 === 0) {
-                    starCharges += 2;
-                    gotBonus = true;
-                }
-                
-                currentLevel++;
-                gameRunning = false;
-                stopTimers();
-                
-                overlayTitle.innerText = "ASCENSO";
-                overlayDesc.innerText = `Etapa ${stagesPassed} superada.`;
-                
-                if (gotBonus) bonusMsg.classList.remove('hidden');
-                else bonusMsg.classList.add('hidden');
-
-                normalMenu.classList.remove('hidden');
-                recordMenu.classList.add('hidden');
-                overlay.classList.remove('hidden');
+            if (player.x === exit.x && player.y === exit.y) {
+                nextLevel();
             }
         }
 
-        function handleGameOver(title, desc) {
-            gameRunning = false;
-            stopTimers();
-            draw();
-            bonusMsg.classList.add('hidden');
+        function nextLevel() {
+            gameActive = false;
+            clearTimers();
+            stages++;
+            level++;
+            
+            let bonus = false;
+            if (stages % 5 === 0) { stars += 2; bonus = true; }
 
-            if (stagesPassed > highScore) {
-                normalMenu.classList.add('hidden');
-                recordMenu.classList.remove('hidden');
-                initialsInput.value = "";
+            document.getElementById('msg-title').innerText = "ETAPA SUPERADA";
+            document.getElementById('msg-desc').innerText = `Has avanzado a la etapa ${stages + 1}.`;
+            const alert = document.getElementById('bonus-alert');
+            if (bonus) alert.classList.remove('hidden'); else alert.classList.add('hidden');
+            
+            overlay.classList.remove('hidden');
+            document.getElementById('menu-standard').classList.remove('hidden');
+            document.getElementById('menu-record').classList.add('hidden');
+        }
+
+        function endGame(title, desc) {
+            gameActive = false;
+            clearTimers();
+            render();
+
+            if (stages > bestScore) {
+                document.getElementById('menu-standard').classList.add('hidden');
+                document.getElementById('menu-record').classList.remove('hidden');
                 overlay.classList.remove('hidden');
             } else {
-                overlayTitle.innerText = title;
-                overlayDesc.innerText = `${desc} Puntos: ${stagesPassed}`;
-                normalMenu.classList.remove('hidden');
-                recordMenu.classList.add('hidden');
+                document.getElementById('msg-title').innerText = title;
+                document.getElementById('msg-desc').innerText = desc + ` Puntos: ${stages}`;
                 overlay.classList.remove('hidden');
-                resetGameVars();
+                resetSession();
             }
         }
 
-        function resetGameVars() {
-            stagesPassed = 0;
-            currentLevel = 1;
-            starCharges = 2; 
-            isStarActive = false;
-            updateUI();
+        function resetSession() {
+            stages = 0;
+            level = 1;
+            stars = 2;
+            refreshUI();
         }
 
-        function saveRecord() {
-            const name = initialsInput.value.toUpperCase() || "???";
-            highScore = stagesPassed;
-            highName = name;
-            localStorage.setItem('runa_highscore', highScore);
-            localStorage.setItem('runa_highname', highName);
-            resetGameVars();
-            recordMenu.classList.add('hidden');
-            normalMenu.classList.remove('hidden');
-            overlayTitle.innerText = "GLORIA";
-            overlayDesc.innerText = `Record guardado como ${name}.`;
+        function confirmHighScore() {
+            const input = document.getElementById('initials-input');
+            bestName = input.value.toUpperCase().substring(0,3) || "???";
+            bestScore = stages;
+            localStorage.setItem('runa_best_val', bestScore);
+            localStorage.setItem('runa_best_name', bestName);
+            
+            resetSession();
+            document.getElementById('menu-record').classList.add('hidden');
+            document.getElementById('menu-standard').classList.remove('hidden');
+            document.getElementById('msg-title').innerText = "RECORD GRABADO";
+            refreshUI();
         }
 
-        function startGame() {
+        function useMagicStar() {
+            if (stars > 0 && !isMagicActive && gameActive) {
+                stars--;
+                isMagicActive = true;
+                refreshUI();
+                render();
+            }
+        }
+
+        function initGameSession() {
             overlay.classList.add('hidden');
-            bonusMsg.classList.add('hidden');
-            setupLevel();
-            gameRunning = true;
-            
-            const baseSpeed = currentLevel === 1 ? 950 : currentLevel === 2 ? 650 : 450;
-            const enemySpeed = Math.max(300, baseSpeed - (stagesPassed * 10));
-            
-            enemyTimer = setInterval(() => {
-                if (gameRunning) moveEnemy();
-            }, enemySpeed);
+            prepareStage();
+            gameActive = true;
 
-            batteryTimer = setInterval(() => {
-                if (gameRunning) {
-                    batteryLevel -= (0.15 + (stagesPassed * 0.02));
-                    batteryFill.style.width = Math.max(0, batteryLevel) + "%";
-                    if (batteryLevel <= 0) {
-                        batteryLevel = 0;
-                        handleGameOver("EXTINCIÓN", "Tu luz se apagó.");
-                    }
-                    draw();
+            const speed = Math.max(200, 750 - (stages * 20));
+            timers.shadow = setInterval(moveShadow, speed);
+
+            timers.battery = setInterval(() => {
+                battery -= (0.2 + (stages * 0.015));
+                batteryBar.style.width = Math.max(0, battery) + "%";
+                if (battery <= 0) {
+                    endGame("EXTINCIÓN", "Tu linterna se ha quedado sin energía.");
                 }
-            }, 100);
-        }
-
-        function activateStar() {
-            if (starCharges > 0 && !isStarActive) {
-                starCharges--;
-                isStarActive = true;
-                updateUI();
-                draw();
-            }
-        }
-
-        function handleTouchMove(di, dj) {
-            if (gameRunning) movePlayer(di, dj);
+            }, 150);
         }
 
         window.addEventListener('keydown', (e) => {
-            if (!gameRunning) return;
+            if (!gameActive) return;
             if (e.code === 'Space') {
                 e.preventDefault();
-                activateStar();
-                return;
+                useMagicStar();
             }
             const keys = {
-                'ArrowUp': [0, -1], 'w': [0, -1], 'W': [0, -1],
-                'ArrowDown': [0, 1], 's': [0, 1], 'S': [0, 1],
-                'ArrowLeft': [-1, 0], 'a': [-1, 0], 'A': [-1, 0],
-                'ArrowRight': [1, 0], 'd': [1, 0], 'D': [1, 0]
+                'ArrowUp': [0, -1], 'w': [0, -1],
+                'ArrowDown': [0, 1], 's': [0, 1],
+                'ArrowLeft': [-1, 0], 'a': [-1, 0],
+                'ArrowRight': [1, 0], 'd': [1, 0]
             };
             if (keys[e.key]) {
                 e.preventDefault();
-                movePlayer(...keys[e.key]);
+                triggerMove(...keys[e.key]);
             }
         });
 
-        // Reajustar si cambia la orientación o tamaño
-        window.addEventListener('resize', () => {
-            if (!gameRunning) setupLevel();
-        });
-
         window.onload = () => {
-            if(window.lucide) lucide.createIcons();
-            updateUI();
-            setupLevel();
+            lucide.createIcons();
+            refreshUI();
+            prepareStage();
         };
+
+        window.addEventListener('resize', () => {
+            if (!gameActive) prepareStage();
+        });
     </script>
 </body>
 </html>
